@@ -23,6 +23,8 @@
 # misc
 .DS_Store
 *.pem
+Thumbs.db
+*~
 
 # debug
 npm-debug.log*
@@ -39,3 +41,20 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*.swn
+.project
+.classpath
+.settings/
+
+# Docker
+docker-compose.override.yml
+.docker/
+
+# Drizzle (uncomment if you don't want to commit migrations)
+# /drizzle/

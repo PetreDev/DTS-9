@@ -1,0 +1,33 @@
+{
+  "type": "record",
+  "name": "InteractionEvent",
+  "namespace": "com.taskflow.events",
+  "doc": "Simple user interaction events",
+  "fields": [
+    {
+      "name": "id",
+      "type": "string",
+      "doc": "Event ID"
+    },
+    {
+      "name": "action",
+      "type": "string",
+      "doc": "What happened: view, login, register, logout, create, complete, delete"
+    },
+    {
+      "name": "who",
+      "type": "string",
+      "doc": "User email or anonymous"
+    },
+    {
+      "name": "what",
+      "type": "string",
+      "doc": "Target: page name or todo title"
+    },
+    {
+      "name": "time",
+      "type": "string",
+      "doc": "Human-readable timestamp"
+    }
+  ]
+}

@@ -1,0 +1,27 @@
+{
+  "name": "cassandra-sink-interactions",
+  "config": {
+    "connector.class": "io.confluent.connect.cassandra.CassandraSinkConnector",
+    "tasks.max": "1",
+    "topics": "taskflow-interactions",
+    "cassandra.contact.points": "cassandra",
+    "cassandra.port": "9042",
+    "cassandra.keyspace": "taskflow",
+    "cassandra.local.datacenter": "dc1",
+    "cassandra.consistency.level": "LOCAL_ONE",
+    "cassandra.write.mode": "Insert",
+    "pk.mode": "record_key",
+    "pk.fields": "id",
+    "auto.create": "false",
+    "confluent.topic.bootstrap.servers": "kafka:29092",
+    "key.converter": "org.apache.kafka.connect.storage.StringConverter",
+    "value.converter": "io.confluent.connect.avro.AvroConverter",
+    "value.converter.schema.registry.url": "http://schema-registry:8081",
+    "transforms": "routeToTable,extractKey",
+    "transforms.routeToTable.type": "org.apache.kafka.connect.transforms.RegexRouter",
+    "transforms.routeToTable.regex": "taskflow-interactions",
+    "transforms.routeToTable.replacement": "interactions",
+    "transforms.extractKey.type": "org.apache.kafka.connect.transforms.ValueToKey",
+    "transforms.extractKey.fields": "id"
+  }
+}

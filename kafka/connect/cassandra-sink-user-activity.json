@@ -1,0 +1,23 @@
+{
+    "name": "cassandra-sink-user-activity",
+    "config": {
+        "connector.class": "io.confluent.connect.cassandra.CassandraSinkConnector",
+        "tasks.max": "1",
+        "topics": "USER_ACTIVITY_PER_MINUTE",
+        "cassandra.contact.points": "cassandra",
+        "cassandra.port": "9042",
+        "cassandra.keyspace": "taskflow",
+        "cassandra.local.datacenter": "dc1",
+        "cassandra.consistency.level": "LOCAL_ONE",
+        "cassandra.write.mode": "Upsert",
+        "pk.mode": "record_value",
+        "pk.fields": "USER_EMAIL_VALUE,EVENT_CATEGORY_VALUE,WINDOW_START",
+        "auto.create": "false",
+        "auto.evolve": "false",
+        "confluent.topic.bootstrap.servers": "kafka:29092",
+        "key.converter": "org.apache.kafka.connect.json.JsonConverter",
+        "key.converter.schemas.enable": "false",
+        "value.converter": "io.confluent.connect.avro.AvroConverter",
+        "value.converter.schema.registry.url": "http://schema-registry:8081"
+    }
+}

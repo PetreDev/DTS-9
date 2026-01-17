@@ -204,6 +204,51 @@ services:
       exit 0;
       "
 
+  # ksqlDB Server: Stream processing engine for Kafka
+  ksqldb-server:
+    image: confluentinc/cp-ksqldb-server:8.0.3
+    container_name: task9-ksqldb-server
+    hostname: ksqldb-server
+    depends_on:
+      kafka:
+        condition: service_healthy
+      schema-registry:
+        condition: service_healthy
+      kafka-connect:
+        condition: service_healthy
+    ports:
+      - "8088:8088"
+    environment:
+      KSQL_BOOTSTRAP_SERVERS: kafka:29092
+      KSQL_LISTENERS: http://0.0.0.0:8088
+      KSQL_KSQL_SERVICE_ID: task9-ksqldb
+      KSQL_KSQL_SCHEMA_REGISTRY_URL: http://schema-registry:8081
+      KSQL_KSQL_CONNECT_URL: http://kafka-connect:8083
+      KSQL_KSQL_LOGGING_PROCESSING_STREAM_AUTO_CREATE: "true"
+      KSQL_KSQL_LOGGING_PROCESSING_TOPIC_AUTO_CREATE: "true"
+      # Enable pulling from all topics including internal ones
+      KSQL_KSQL_HIDDEN_TOPICS: "^_.*"
+      # Cache and processing settings
+      KSQL_CACHE_MAX_BYTES_BUFFERING: 0
+      KSQL_KSQL_STREAMS_AUTO_OFFSET_RESET: earliest
+    healthcheck:
+      test: curl -f http://localhost:8088/info || exit 1
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+  # ksqlDB CLI: Interactive command-line interface for ksqlDB
+  ksqldb-cli:
+    image: confluentinc/cp-ksqldb-cli:8.0.3
+    container_name: task9-ksqldb-cli
+    depends_on:
+      ksqldb-server:
+        condition: service_healthy
+    entrypoint: /bin/sh
+    tty: true
+    stdin_open: true
+
 volumes:
   postgres_data:
   kafka_data:

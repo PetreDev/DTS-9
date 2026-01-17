@@ -56,5 +56,8 @@ next-env.d.ts
 docker-compose.override.yml
 .docker/
 
+# Kafka Connect plugins (downloaded manually, too large for git)
+kafka/plugins/
+
 # Drizzle (uncomment if you don't want to commit migrations)
 # /drizzle/

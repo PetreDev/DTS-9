@@ -11,6 +11,15 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    # CDC Configuration: Enable logical replication for Debezium
+    command:
+      - "postgres"
+      - "-c"
+      - "wal_level=logical"
+      - "-c"
+      - "max_replication_slots=4"
+      - "-c"
+      - "max_wal_senders=4"
     healthcheck:
       test:
         [
@@ -85,6 +94,10 @@ services:
         condition: service_healthy
       cassandra:
         condition: service_healthy
+      postgres:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
     ports:
       - "8083:8083"
     environment:
@@ -100,35 +113,39 @@ services:
       CONNECT_KEY_CONVERTER: org.apache.kafka.connect.storage.StringConverter
       CONNECT_VALUE_CONVERTER: io.confluent.connect.avro.AvroConverter
       CONNECT_VALUE_CONVERTER_SCHEMA_REGISTRY_URL: http://schema-registry:8081
-      CONNECT_PLUGIN_PATH: /usr/share/java,/usr/share/confluent-hub-components
+      CONNECT_PLUGIN_PATH: /usr/share/java,/usr/share/confluent-hub-components,/opt/kafka-connect-plugins
+      # AWS credentials for S3 sink connector (MinIO)
+      AWS_ACCESS_KEY_ID: minioadmin
+      AWS_SECRET_ACCESS_KEY: minioadmin
     volumes:
       - kafka-connect-plugins:/usr/share/confluent-hub-components
+      # Mount local plugins: Debezium 3.4.0.Final and S3 Sink 12.0.0
+      - ./kafka/plugins:/opt/kafka-connect-plugins
     command:
       - bash
       - -c
       - |
-        echo "Installing Confluent Cassandra Sink Connector..."
-        if confluent-hub install --no-prompt --component-dir /usr/share/confluent-hub-components confluentinc/kafka-connect-cassandra:2.0.14; then
-          echo "✅ Connector installed successfully"
-          echo "Verifying installation..."
-          if [ -d "/usr/share/confluent-hub-components/confluentinc-kafka-connect-cassandra" ]; then
-            echo "✅ Connector directory found"
-            ls -la /usr/share/confluent-hub-components/confluentinc-kafka-connect-cassandra/lib/ | head -5
-          else
-            echo "⚠️  Warning: Connector directory not found, but continuing..."
-          fi
-        else
-          echo "❌ Failed to install connector"
-          exit 1
-        fi
+        echo "Installing Kafka Connect plugins..."
+        
+        # Install Cassandra Sink Connector (from Confluent Hub)
+        echo "Installing Cassandra Sink Connector 2.0.14..."
+        confluent-hub install --no-prompt --component-dir /usr/share/confluent-hub-components confluentinc/kafka-connect-cassandra:2.0.14 || true
+        
+        # Debezium PostgreSQL 3.4.0.Final and S3 Sink 12.0.0 are mounted from ./kafka/plugins
+        echo "Custom plugins mounted from ./kafka/plugins:"
+        ls -la /opt/kafka-connect-plugins/
+        
+        echo "Installed connectors from Confluent Hub:"
+        ls -la /usr/share/confluent-hub-components/
+        
         echo "Starting Kafka Connect..."
         /etc/confluent/docker/run
     healthcheck:
-      test: curl -f http://localhost:8083/connector-plugins | grep -qi cassandra || exit 1
+      test: curl -f http://localhost:8083/connector-plugins | grep -qi postgres || exit 1
       interval: 15s
       timeout: 10s
       retries: 30
-      start_period: 120s
+      start_period: 180s
 
   cassandra:
     image: cassandra:latest
@@ -150,8 +167,46 @@ services:
       retries: 15
       start_period: 60s
 
+  # MinIO: S3-compatible object storage for data lake (bronze zone)
+  minio:
+    image: minio/minio:latest
+    container_name: task9-minio
+    hostname: minio
+    ports:
+      - "9000:9000"   # S3 API
+      - "9001:9001"   # Console UI
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    volumes:
+      - minio_data:/data
+    command: server /data --console-address ":9001"
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+  # MinIO Client: Creates the bronze bucket on startup
+  minio-init:
+    image: minio/mc:latest
+    container_name: task9-minio-init
+    depends_on:
+      minio:
+        condition: service_healthy
+    entrypoint: >
+      /bin/sh -c "
+      mc alias set myminio http://minio:9000 minioadmin minioadmin;
+      mc mb --ignore-existing myminio/bronze;
+      mc anonymous set download myminio/bronze;
+      echo 'MinIO bucket bronze created successfully';
+      exit 0;
+      "
+
 volumes:
   postgres_data:
   kafka_data:
   kafka-connect-plugins:
   cassandra_data:
+  minio_data:

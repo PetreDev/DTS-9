@@ -1,0 +1,30 @@
+{
+  "name": "s3-sink-cdc-bronze",
+  "config": {
+    "connector.class": "io.confluent.connect.s3.S3SinkConnector",
+    "tasks.max": "1",
+    "topics": "cdc.public.todo",
+    "s3.bucket.name": "bronze",
+    "s3.region": "us-east-1",
+    "store.url": "http://minio:9000",
+    "storage.class": "io.confluent.connect.s3.storage.S3Storage",
+    "format.class": "io.confluent.connect.s3.format.avro.AvroFormat",
+    "partitioner.class": "io.confluent.connect.storage.partitioner.TimeBasedPartitioner",
+    "path.format": "'year'=YYYY/'month'=MM/'day'=dd/'hour'=HH",
+    "partition.duration.ms": "3600000",
+    "timestamp.extractor": "Record",
+    "locale": "en-US",
+    "timezone": "UTC",
+    "topics.dir": "cdc-events",
+    "flush.size": "1",
+    "rotate.interval.ms": "10000",
+    "rotate.schedule.interval.ms": "60000",
+    "key.converter": "io.confluent.connect.avro.AvroConverter",
+    "key.converter.schema.registry.url": "http://schema-registry:8081",
+    "value.converter": "io.confluent.connect.avro.AvroConverter",
+    "value.converter.schema.registry.url": "http://schema-registry:8081",
+    "behavior.on.null.values": "ignore",
+    "aws.access.key.id": "minioadmin",
+    "aws.secret.access.key": "minioadmin"
+  }
+}

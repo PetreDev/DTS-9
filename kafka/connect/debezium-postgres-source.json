@@ -1,0 +1,27 @@
+{
+  "name": "debezium-postgres-cdc-v2",
+  "config": {
+    "connector.class": "io.debezium.connector.postgresql.PostgresConnector",
+    "tasks.max": "1",
+    "database.hostname": "postgres",
+    "database.port": "5432",
+    "database.user": "postgres",
+    "database.password": "postgres",
+    "database.dbname": "app",
+    "topic.prefix": "cdc",
+    "table.include.list": "public.todo",
+    "plugin.name": "pgoutput",
+    "snapshot.mode": "initial",
+    "tombstones.on.delete": "true",
+    "slot.name": "debezium_v2",
+    "key.converter": "io.confluent.connect.avro.AvroConverter",
+    "key.converter.schema.registry.url": "http://schema-registry:8081",
+    "value.converter": "io.confluent.connect.avro.AvroConverter",
+    "value.converter.schema.registry.url": "http://schema-registry:8081",
+    "transforms": "unwrap",
+    "transforms.unwrap.type": "io.debezium.transforms.ExtractNewRecordState",
+    "transforms.unwrap.drop.tombstones": "true",
+    "transforms.unwrap.delete.handling.mode": "rewrite",
+    "transforms.unwrap.add.fields": "op,table,source.ts_ms"
+  }
+}
